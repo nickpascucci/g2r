@@ -16,6 +16,7 @@ data Direction = Clockwise | CounterClockwise deriving Show
 data CoordinateSystem = Machine
                       | Workpiece Float Float Float
                       deriving Show
+
 data DistanceMode = Absolute | Relative deriving Show
 data FeedMode = InverseTime | UnitsPerMinute | UnitsPerRevolution deriving Show
 
@@ -49,13 +50,18 @@ commandParser = do
   return $ case (read n) of
     28 -> Home
 
+-- Matches n > 0 space characters.
+spacesOnly :: Parsec String () String
+spacesOnly = do
+  spaces <- many1 (char ' ')
+  return spaces
+
 lineParser :: Parsec String () ProgramLine
 lineParser = do
   char 'N'
   n <- many1 digit
-  spaces
-  cmd <- commandParser
-  return $ ProgramLine (read n) [cmd]
+  cmds <- many1 (spacesOnly *> commandParser)
+  return $ ProgramLine (read n) cmds
 
 programParser :: Parsec String () Program
 programParser = many $ lineParser <* endOfLine
